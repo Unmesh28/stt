@@ -366,13 +366,23 @@
                     document.getElementById('uploadStatus').innerHTML = '<span class="status-dot"></span><span>Connected</span>';
                 };
                 
-                ws.onmessage = (event) => handleServerMessage(JSON.parse(event.data));
-                ws.onerror = (error) => updateStatus('Error', 'disconnected');
-                ws.onclose = () => {
+                ws.onmessage = (event) => {
+                    console.log('Received message:', event.data);
+                    handleServerMessage(JSON.parse(event.data));
+                };
+                ws.onerror = (error) => {
+                    console.error('WebSocket error:', error);
+                    updateStatus('Error', 'disconnected');
+                };
+                ws.onclose = (event) => {
+                    console.log('WebSocket closed:', event.code, event.reason);
                     updateStatus('Disconnected', 'disconnected');
                     document.getElementById('connectBtn').disabled = false;
                     document.getElementById('startBtn').disabled = true;
                     document.getElementById('stopBtn').disabled = true;
+                    // Reset file upload button if connection closes
+                    document.getElementById('uploadBtnText').innerHTML = '📤 Upload & Transcribe';
+                    document.querySelector('#fileInfo button').disabled = false;
                 };
             } catch (error) {
                 updateStatus('Failed', 'disconnected');
@@ -429,6 +439,7 @@
         }
         
         function handleServerMessage(data) {
+            console.log('Server message:', data);
             if (data.type === 'transcript') {
                 addTranscript(data.text);
                 if (data.language) document.getElementById('detectedLang').textContent = data.language.toUpperCase();
@@ -436,6 +447,9 @@
                 displayFileTranscript(data);
             } else if (data.type === 'error') {
                 alert('Error: ' + data.message);
+                // Reset file upload button on error
+                document.getElementById('uploadBtnText').innerHTML = '📤 Upload & Transcribe';
+                document.querySelector('#fileInfo button').disabled = false;
             }
         }
         
@@ -515,12 +529,19 @@
                     return;
                 }
                 const base64Audio = e.target.result.split(',')[1];
+                console.log('Sending file, size:', base64Audio.length, 'bytes');
                 ws.send(JSON.stringify({
                     type: 'file',
                     audio: base64Audio,
                     format: selectedFile.name.split('.').pop(),
                     language: null
                 }));
+                console.log('File sent to server');
+            };
+            reader.onerror = (e) => {
+                alert('Error reading file: ' + e.target.error);
+                document.getElementById('uploadBtnText').innerHTML = '📤 Upload & Transcribe';
+                document.querySelector('#fileInfo button').disabled = false;
             };
             reader.readAsDataURL(selectedFile);
         }
