@@ -20,6 +20,9 @@ logging.basicConfig(
     ]
 )
 
+# Suppress noisy websockets library logs (handshake errors, etc.)
+logging.getLogger('websockets').setLevel(logging.WARNING)
+
 class WhisperServer:
     def __init__(self):
         logging.info("Initializing Whisper Server...")
@@ -271,7 +274,15 @@ class WhisperServer:
         logging.info(f"Device: {self.device}")
         logging.info("="*60)
         
-        async with websockets.serve(self.handle_client, host, port, max_size=50 * 1024 * 1024):
+        async with websockets.serve(
+            self.handle_client,
+            host,
+            port,
+            max_size=50 * 1024 * 1024,
+            ping_interval=30,
+            ping_timeout=10,
+            close_timeout=5
+        ):
             logging.info(f"✓ Server is running on ws://{host}:{port}")
             logging.info("✓ Ready to accept connections")
             await asyncio.Future()
