@@ -216,7 +216,7 @@ class WhisperServer:
             wav_file.setframerate(sample_rate)
             wav_file.writeframes(audio_int16.tobytes())
     
-    async def handle_client(self, websocket, path):
+    async def handle_client(self, websocket, path=None):
         """Handle WebSocket client connection"""
         client_id = id(websocket)
         logging.info(f"Client connected: {client_id}")
