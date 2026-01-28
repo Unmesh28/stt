@@ -23,13 +23,28 @@ logging.basicConfig(
 class WhisperServer:
     def __init__(self):
         logging.info("Initializing Whisper Server...")
-        self.model = WhisperModel(
-            "large-v3",
-            device="cuda",
-            compute_type="float16",
-            download_root="/home/ubuntu/.cache/whisper"
-        )
-        logging.info("✓ Model loaded successfully")
+
+        # Try CUDA first, fall back to CPU if not available
+        try:
+            self.model = WhisperModel(
+                "large-v3",
+                device="cuda",
+                compute_type="float16",
+                download_root="/home/ubuntu/.cache/whisper"
+            )
+            self.device = "CUDA"
+            logging.info("✓ Model loaded successfully (CUDA)")
+        except Exception as e:
+            logging.warning(f"CUDA not available: {e}")
+            logging.info("Falling back to CPU mode...")
+            self.model = WhisperModel(
+                "large-v3",
+                device="cpu",
+                compute_type="int8",
+                download_root="/home/ubuntu/.cache/whisper"
+            )
+            self.device = "CPU"
+            logging.info("✓ Model loaded successfully (CPU - slower)")
         
         # Audio buffer for real-time streaming
         self.audio_buffers = {}
@@ -252,8 +267,8 @@ class WhisperServer:
         logging.info("Whisper WebSocket Server Starting...")
         logging.info(f"Host: {host}")
         logging.info(f"Port: {port}")
-        logging.info(f"Model: Whisper large-v3 (FP16)")
-        logging.info(f"Device: CUDA")
+        logging.info(f"Model: Whisper large-v3")
+        logging.info(f"Device: {self.device}")
         logging.info("="*60)
         
         async with websockets.serve(self.handle_client, host, port, max_size=50 * 1024 * 1024):
