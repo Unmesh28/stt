@@ -256,7 +256,7 @@ class WhisperServer:
         logging.info(f"Device: CUDA")
         logging.info("="*60)
         
-        async with websockets.serve(self.handle_client, host, port):
+        async with websockets.serve(self.handle_client, host, port, max_size=50 * 1024 * 1024):
             logging.info(f"✓ Server is running on ws://{host}:{port}")
             logging.info("✓ Ready to accept connections")
             await asyncio.Future()
