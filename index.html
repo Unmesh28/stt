@@ -344,7 +344,7 @@
         let audioContext = null;
         let selectedFile = null;
         
-        const WS_URL = 'ws://YOUR_SERVER_IP:8000';
+        const WS_URL = `ws://${window.location.hostname}:8000`;
         
         function switchTab(tab) {
             document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
@@ -508,6 +508,12 @@
             
             const reader = new FileReader();
             reader.onload = (e) => {
+                if (!ws || ws.readyState !== WebSocket.OPEN) {
+                    alert('WebSocket connection lost. Please reconnect.');
+                    document.getElementById('uploadBtnText').innerHTML = '📤 Upload & Transcribe';
+                    document.querySelector('#fileInfo button').disabled = false;
+                    return;
+                }
                 const base64Audio = e.target.result.split(',')[1];
                 ws.send(JSON.stringify({
                     type: 'file',
